@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 
-from utils.regex import COW, MILK
+from bot.utils.regex import COW, MILK
 
 
 class Reactions(commands.Cog):
