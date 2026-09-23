@@ -148,17 +148,8 @@ class FoxNose(commands.GroupCog, name="fox_nose", description="Commands for Fox 
                 except (discord.Forbidden, discord.HTTPException):
                     pass
 
-        # Auto Quarantine if score is high
-        if sus_score >= auto_quarantine_score:
-            try:
-                await member.timeout(
-                    discord.utils.utcnow() + discord.utils.timedelta(minutes=30),
-                    reason=f"[Fox Nose] High Suspect Score ({sus_score}/100)",
-                )
-            except (discord.Forbidden, discord.HTTPException):
-                pass
-
     async def _notify_raid_alert(self, guild: discord.Guild, log_channel_id: int | None):
+
         log_channel = guild.get_channel(log_channel_id) if log_channel_id else None
         if log_channel is None:
             log_channel = guild.system_channel or next((c for c in guild.text_channels if c.permissions_for(guild.me).send_messages), None)
@@ -168,12 +159,13 @@ class FoxNose(commands.GroupCog, name="fox_nose", description="Commands for Fox 
                 title="🚨 RAID SURGE DETECTED - BLESSED LAND UNDER ATTACK!",
                 description=(
                     "Master! Little Hu Immortal detected an incoming wave of intruders!\n"
-                    "**Raid Lockdown Mode** has been activated for **10 minutes**.\n"
-                    "Incoming users will be closely sniffed and quarantined."
+                    "**Raid Alert Mode** has been activated for **10 minutes**.\n"
+                    "Incoming users will be closely sniffed and logged for review."
                 ),
                 color=discord.Color.dark_red(),
             )
             embed.set_footer(text="Hu Immortal Blessed Land Anti-Raid 🦊")
+
             try:
                 await log_channel.send(embed=embed)
             except (discord.Forbidden, discord.HTTPException):
