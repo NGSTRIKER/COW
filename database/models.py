@@ -90,3 +90,21 @@ class ReactionRoleItem(Base):
 
     # Parent relationship back to ReactionRole message
     reaction_role: Mapped[ReactionRole] = relationship(back_populates="items")
+
+
+class UserXP(Base):
+    """
+    Represents an individual user's Experience Points (XP), Level, and Message Stats
+    within a specific Discord Server (Guild).
+    """
+    __tablename__ = "user_xp"
+    __table_args__ = (
+        UniqueConstraint("guild_id", "user_id", name="uq_user_xp_guild_user"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
+    xp: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    level: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    message_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
