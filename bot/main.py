@@ -19,7 +19,7 @@ intents.message_content = True
 intents.members = True
 
 
-class CowBot(commands.Bot):
+class HuImmortalBot(commands.Bot):
     def __init__(self):
         super().__init__(
             command_prefix="!",
@@ -29,13 +29,13 @@ class CowBot(commands.Bot):
 
     async def setup_hook(self):
         print("=" * 50)
-        print("[COW] Starting")
+        print("🦊 [Little Hu Immortal] Awakening Land Spirit...")
         print("=" * 50)
 
-        print("[COW] Initializing PostgreSQL...")
+        print("🌸 [Hu Immortal] Initializing Database...")
         await init_db()
 
-        print("[COW] Loading cogs...")
+        print("🌸 [Hu Immortal] Loading Cogs & Divine Gu...")
 
         for file in (BOT_DIRECTORY / "cogs").glob("*.py"):
             if file.name.startswith("_"):
@@ -50,18 +50,23 @@ class CowBot(commands.Bot):
                 print(f"❌ Failed to load {file.stem}")
                 raise e
 
-        guild = discord.Object(id=TEST_GUILD_ID)
-
-        self.tree.copy_global_to(guild=guild)
-        synced = await self.tree.sync(guild=guild)
-
-        print(f"[COW] Synced {len(synced)} command(s)")
+        guild_id_str = os.getenv("GUILD_ID") or os.getenv("TEST_GUILD_ID")
+        if guild_id_str:
+            guild_id = int(guild_id_str)
+            guild = discord.Object(id=guild_id)
+            self.tree.copy_global_to(guild=guild)
+            synced = await self.tree.sync(guild=guild)
+            print(f"🦊 [Hu Immortal] Synced {len(synced)} command(s) to Blessed Land (Guild ID: {guild_id})")
+        else:
+            synced = await self.tree.sync()
+            print(f"🦊 [Hu Immortal] Synced {len(synced)} command(s) globally")
         print("=" * 50)
+
 
     async def on_ready(self):
         print("=" * 50)
-        print(f"[COW] Logged in as {self.user}")
-        print(f"[COW] Guilds : {len(self.guilds)}")
+        print(f"🦊 [Little Hu Immortal] Logged in as {self.user}")
+        print(f"🌸 [Hu Immortal] Guarding {len(self.guilds)} Blessed Land(s)")
         print("=" * 50)
 
 
@@ -71,7 +76,7 @@ def main():
     if not token:
         raise RuntimeError("TOKEN not found in .env")
 
-    bot = CowBot()
+    bot = HuImmortalBot()
     bot.run(token)
 
 

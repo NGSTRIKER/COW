@@ -7,51 +7,61 @@ from discord.ext import commands
 from bot.views.confirm import ConfirmView
 
 
-MILK_RE = re.compile(
-    r"^milk\s+<@!?(\d+)>\s+for\s+(\d+)\s+because\s+(.+)$",
+SUPPRESS_RE = re.compile(
+    r"^(seal|suppress|milk)\s+<@!?(\d+)>\s+for\s+(\d+)\s+because\s+(.+)$",
     re.IGNORECASE,
 )
 
 KILL_RE = re.compile(
-    r"^(kill|execute|begone|banish|farewell\s+friend)\s+<@!?(\d+)>$",
+    r"^(kill|execute|begone|banish|farewell\s+friend|expel)\s+<@!?(\d+)>$",
     re.IGNORECASE,
 )
 
 
 class Moderation(commands.Cog):
+    """
+    🌸 Hu Immortal Blessed Land Moderation & Discipline
+    """
     def __init__(self, bot):
         self.bot = bot
-        print("✅ Moderation Cog Loaded")
+        print("✅ Hu Immortal Moderation Cog Loaded")
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.author.bot or message.guild is None:
             return
 
+        content = message.content.strip()
+
         # ==================================================
-        # MILK
+        # SEAL / SUPPRESS (TIMEOUT)
         # ==================================================
 
-        milk = MILK_RE.match(message.content)
+        suppress = SUPPRESS_RE.match(content)
 
-        if milk:
-            member_id = int(milk.group(1))
-            seconds = int(milk.group(2))
-            reason = milk.group(3)
+        if suppress:
+            member_id = int(suppress.group(2))
+            seconds = int(suppress.group(3))
+            reason = suppress.group(4)
 
             member = message.guild.get_member(member_id)
+            if member is None:
+                try:
+                    member = await message.guild.fetch_member(member_id)
+                except (discord.NotFound, discord.HTTPException):
+                    member = None
 
             if member is None:
-                await message.reply("❌ User not found.")
+                await message.reply("❌ User not found in Hu Immortal Blessed Land.")
                 return
 
             if member == message.author:
-                await message.reply("🐄 You can't milk yourself.")
+                await message.reply("🦊 Little Hu Immortal stops you: 'Master, you cannot seal yourself!'")
                 return
 
             if not message.author.guild_permissions.moderate_members:
                 await message.reply(
-                    "❌ You need the **Timeout Members** permission."
+                    "❌ You need the **Timeout Members** permission to command Dang Hun Mountain."
                 )
                 return
 
@@ -62,22 +72,22 @@ class Moderation(commands.Cog):
                 )
 
                 await message.channel.send(
-                    f"🥛 **{member.mention} has been milked for {seconds} seconds.**\n"
+                    f"🏔️ **{member.mention} has been suppressed beneath Dang Hun Mountain for {seconds} seconds.**\n"
                     f"🥀 Reason: **{reason}**"
                 )
 
             except discord.Forbidden:
                 await message.reply(
-                    "❌ I can't milk that user. They may have a higher role than me."
+                    "❌ Little Hu Immortal lacks the power to suppress that user (higher role)."
                 )
 
             return
 
         # ==================================================
-        # KILL / EXECUTE / BEGONE / BANISH / FAREWELL FRIEND
+        # EXPEL / BANISH / EXECUTE (KICK)
         # ==================================================
 
-        kill = KILL_RE.match(message.content)
+        kill = KILL_RE.match(content)
 
         if not kill:
             return
@@ -86,13 +96,19 @@ class Moderation(commands.Cog):
         member_id = int(kill.group(2))
 
         member = message.guild.get_member(member_id)
+        if member is None:
+            try:
+                member = await message.guild.fetch_member(member_id)
+            except (discord.NotFound, discord.HTTPException):
+                member = None
 
         if member is None:
             await message.reply("❌ User not found.")
             return
 
+
         if member == message.author:
-            await message.reply("🐄 The cows refuse to let you kick yourself.")
+            await message.reply("🦊 Little Hu Immortal refuses to expel Master!")
             return
 
         if not message.author.guild_permissions.kick_members:
@@ -102,8 +118,8 @@ class Moderation(commands.Cog):
             return
 
         embed = discord.Embed(
-            title=f"⚠️ Confirm {command.title()}",
-            description=f"Are you sure you want to **{command}** {member.mention}?",
+            title=f"⚠️ Confirm Expulsion ({command.title()})",
+            description=f"Master, are you sure you wish to **{command}** {member.mention} from Hu Immortal Blessed Land?",
             colour=discord.Colour.orange(),
         )
 
@@ -114,7 +130,7 @@ class Moderation(commands.Cog):
         )
 
         embed.add_field(
-            name="Target",
+            name="Target Intruders",
             value=member.mention,
             inline=True,
         )
@@ -140,7 +156,7 @@ class Moderation(commands.Cog):
 
         if view.value is False:
             await confirm_message.edit(
-                content="❌ Action cancelled.",
+                content="❌ Action cancelled by Master.",
                 embed=None,
                 view=None,
             )
@@ -153,37 +169,32 @@ class Moderation(commands.Cog):
 
         except discord.Forbidden:
             await confirm_message.edit(
-                content="❌ I can't kick that user. They probably have a higher role than me.",
+                content="❌ Little Hu Immortal could not expel that user (higher role than bot).",
                 embed=None,
                 view=None,
             )
             return
 
-        if command == "execute":
+        if command in ("execute", "kill"):
             text = (
-                f"⚔️ **{member} has been publicly executed.**\n"
-                "The cows watched in silence. 🐄"
+                f"⚔️ **{member} was struck down by Dang Hun Mountain's divine vibration.**\n"
+                "Little Hu Immortal cleanses the battlefield. 🦊🌸"
             )
 
         elif command == "farewell friend":
             text = (
                 f"👋 **Farewell, {member}.**\n"
-                "The cows shall remember your sacrifice. 🐄"
+                "May your soul find peace outside Hu Immortal Blessed Land. 🌸"
             )
 
-        elif command == "begone":
+        elif command in ("begone", "banish", "expel"):
             text = (
-                f"🚪 **{member} has been banished from the pasture.**"
-            )
-
-        elif command == "banish":
-            text = (
-                f"🌌 **{member} has been exiled to the forbidden fields.**"
+                f"🌌 **{member} has been banished beyond the boundaries of Hu Immortal Blessed Land!** 🦊"
             )
 
         else:
             text = (
-                f"💀 **{member} was trampled beneath a horde of cows.** 🐄🐄🐄"
+                f"💀 **{member} was expelled from the Blessed Land.** 🌸"
             )
 
         await confirm_message.edit(

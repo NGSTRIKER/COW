@@ -73,18 +73,21 @@ class AutoRole(commands.Cog):
             return
 
         try:
-            async with SessionLocal.begin() as session:
-                guild = await session.get(Guild, interaction.guild_id)
-                if guild is None:
-                    session.add(Guild(guild_id=interaction.guild_id))
-                session.add(ReactionRole(
-                    guild_id=interaction.guild_id,
-                    channel_id=interaction.channel_id,
-                    message_id=message.id,
-                    title=title,
-                    description=description,
-                    items=[ReactionRoleItem(emoji=emoji, role_id=role.id) for emoji, role in zip(NUMBER_EMOJIS, roles)],
-                ))
+            async with SessionLocal() as session:
+                async with session.begin():
+                    guild = await session.get(Guild, interaction.guild_id)
+                    if guild is None:
+                        guild = Guild(guild_id=interaction.guild_id)
+                        session.add(guild)
+                        await session.flush()
+                    session.add(ReactionRole(
+                        guild_id=interaction.guild_id,
+                        channel_id=interaction.channel_id,
+                        message_id=message.id,
+                        title=title,
+                        description=description,
+                        items=[ReactionRoleItem(emoji=emoji, role_id=role.id) for emoji, role in zip(NUMBER_EMOJIS, roles)],
+                    ))
         except Exception:
             LOGGER.exception("Failed to save reaction role message %s", message.id)
             await interaction.followup.send(
@@ -153,12 +156,15 @@ class AutoRole(commands.Cog):
 
     @staticmethod
     def _can_manage_role(role: discord.Role) -> bool:
+        me = role.guild.me
+        if me is None:
+            return False
         return (
-            role.guild.me is not None
-            and not role.is_default()
+            not role.is_default()
             and not role.managed
-            and role < role.guild.me.top_role
+            and role < me.top_role
         )
+
 
     @auto_role.error
     async def auto_role_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError) -> None:

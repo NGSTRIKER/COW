@@ -19,6 +19,12 @@ class Guild(Base):
     xp_max: Mapped[int] = mapped_column(Integer, default=20, nullable=False)
     xp_cooldown: Mapped[int] = mapped_column(Integer, default=30, nullable=False)
 
+    fox_nose_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    fox_nose_log_channel: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    auto_quarantine_score: Mapped[int] = mapped_column(Integer, default=70, nullable=False)
+    raid_threshold_joins: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
+    raid_threshold_seconds: Mapped[int] = mapped_column(Integer, default=10, nullable=False)
+
     reaction_roles: Mapped[list[ReactionRole]] = relationship(
         back_populates="guild", cascade="all, delete-orphan", passive_deletes=True
     )
