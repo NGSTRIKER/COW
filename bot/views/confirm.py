@@ -2,6 +2,10 @@ import discord
 
 
 class ConfirmView(discord.ui.View):
+    """
+    Interactive Confirmation UI View containing Confirm and Cancel buttons.
+    Used by moderation commands to request user confirmation before taking action.
+    """
     def __init__(
         self,
         author: discord.Member,
@@ -17,10 +21,12 @@ class ConfirmView(discord.ui.View):
         self,
         interaction: discord.Interaction,
     ) -> bool:
-
+        """
+        Restricts interaction so only the original command invoker can click the buttons.
+        """
         if interaction.user.id != self.author.id:
             await interaction.response.send_message(
-                "❌ Only the person who ran this command can use these buttons.",
+                "Only the person who ran this command can use these buttons.",
                 ephemeral=True,
             )
             return False
@@ -29,7 +35,6 @@ class ConfirmView(discord.ui.View):
 
     @discord.ui.button(
         label="Confirm",
-        emoji="✅",
         style=discord.ButtonStyle.green,
     )
     async def confirm(
@@ -37,20 +42,19 @@ class ConfirmView(discord.ui.View):
         interaction: discord.Interaction,
         button: discord.ui.Button,
     ):
+        """
+        Confirm button callback. Sets value to True and disables UI buttons.
+        """
         self.value = True
 
         for child in self.children:
             child.disabled = True
 
-        await interaction.response.edit_message(
-            view=self
-        )
-
+        await interaction.response.edit_message(view=self)
         self.stop()
 
     @discord.ui.button(
         label="Cancel",
-        emoji="❌",
         style=discord.ButtonStyle.red,
     )
     async def cancel(
@@ -58,18 +62,21 @@ class ConfirmView(discord.ui.View):
         interaction: discord.Interaction,
         button: discord.ui.Button,
     ):
+        """
+        Cancel button callback. Sets value to False and disables UI buttons.
+        """
         self.value = False
 
         for child in self.children:
             child.disabled = True
 
-        await interaction.response.edit_message(
-            view=self
-        )
-
+        await interaction.response.edit_message(view=self)
         self.stop()
 
     async def on_timeout(self):
+        """
+        Timeout handler called if no button interaction occurs within the timeout period.
+        """
         for child in self.children:
             child.disabled = True
 

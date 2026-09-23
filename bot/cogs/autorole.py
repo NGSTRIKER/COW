@@ -8,18 +8,27 @@ from sqlalchemy import select
 from database.db import SessionLocal
 from database.models import Guild, ReactionRole, ReactionRoleItem
 
+# Unicode keycap emojis used as reaction buttons on reaction role messages
 NUMBER_EMOJIS = ("1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟")
 LOGGER = logging.getLogger(__name__)
 
 
 def can_create_auto_role(interaction: discord.Interaction) -> bool:
+    """
+    Check verifying if the user has Administrator or Manage Roles permission.
+    """
     permissions = interaction.permissions
     return permissions.administrator or permissions.manage_roles
 
 
 class AutoRole(commands.Cog):
+    """
+    AutoRole Cog — Enables administrators to create reaction role embeds
+    where members can self-assign roles by reacting to the message.
+    """
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
+        print("[Cog Loaded] AutoRole Cog")
 
     @app_commands.command(name="auto_role", description="Create a reaction role message.")
     @app_commands.default_permissions(manage_roles=True)
@@ -32,10 +41,15 @@ class AutoRole(commands.Cog):
         role7: discord.Role | None = None, role8: discord.Role | None = None,
         role9: discord.Role | None = None, role10: discord.Role | None = None,
     ) -> None:
+        """
+        Slash command handler to build and publish a reaction role embed message,
+        storing emoji-to-role mappings in the database.
+        """
         if interaction.guild is None or interaction.channel_id is None:
             await interaction.response.send_message("This command can only be used in a server channel.", ephemeral=True)
             return
 
+        # Filter non-null roles from arguments
         roles = [role for role in (role1, role2, role3, role4, role5, role6, role7, role8, role9, role10) if role is not None]
         if any(not self._can_manage_role(role) for role in roles):
             await interaction.response.send_message(
@@ -62,6 +76,7 @@ class AutoRole(commands.Cog):
         await interaction.response.send_message(embed=embed)
         message = await interaction.original_response()
 
+        # Add reaction emojis to the sent message
         try:
             for emoji in NUMBER_EMOJIS[:len(roles)]:
                 await message.add_reaction(emoji)
@@ -72,6 +87,7 @@ class AutoRole(commands.Cog):
             )
             return
 
+        # Store reaction role message mapping in database
         try:
             async with SessionLocal() as session:
                 async with session.begin():
@@ -96,10 +112,14 @@ class AutoRole(commands.Cog):
             )
             return
 
-        await interaction.followup.send("Auto-role message created.", ephemeral=True)
+        await interaction.followup.send("Auto-role message created successfully.", ephemeral=True)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
+        """
+        Event listener invoked when a user adds a reaction to any message.
+        Assigns the mapped role if the reaction matches a stored ReactionRole item.
+        """
         if self.bot.user is not None and payload.user_id == self.bot.user.id:
             return
         member = payload.member or await self._get_member(payload.guild_id, payload.user_id)
@@ -115,6 +135,10 @@ class AutoRole(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent) -> None:
+        """
+        Event listener invoked when a user removes a reaction from any message.
+        Removes the mapped role if the reaction matches a stored ReactionRole item.
+        """
         if self.bot.user is not None and payload.user_id == self.bot.user.id:
             return
         member = await self._get_member(payload.guild_id, payload.user_id)
@@ -129,6 +153,9 @@ class AutoRole(commands.Cog):
             return
 
     async def _get_mapped_role(self, payload: discord.RawReactionActionEvent) -> discord.Role | None:
+        """
+        Queries the database to find the Role corresponding to the message ID and emoji reacted.
+        """
         if payload.guild_id is None:
             return None
         async with SessionLocal() as session:
@@ -145,6 +172,9 @@ class AutoRole(commands.Cog):
         return guild.get_role(role_id) if role_id is not None and guild is not None else None
 
     async def _get_member(self, guild_id: int | None, user_id: int) -> discord.Member | None:
+        """
+        Helper method to retrieve a Member object from guild cache or Discord API.
+        """
         if guild_id is None or (guild := self.bot.get_guild(guild_id)) is None:
             return None
         if (member := guild.get_member(user_id)) is not None:
@@ -156,6 +186,9 @@ class AutoRole(commands.Cog):
 
     @staticmethod
     def _can_manage_role(role: discord.Role) -> bool:
+        """
+        Checks whether the bot has hierarchy permission to manage the target role.
+        """
         me = role.guild.me
         if me is None:
             return False
@@ -165,9 +198,11 @@ class AutoRole(commands.Cog):
             and role < me.top_role
         )
 
-
     @auto_role.error
     async def auto_role_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError) -> None:
+        """
+        Error handler for the /auto_role command.
+        """
         message = "You need Administrator or Manage Roles permission to use this command." if isinstance(error, app_commands.CheckFailure) else "Unable to create the auto-role message. Please try again."
         if interaction.response.is_done():
             await interaction.followup.send(message, ephemeral=True)

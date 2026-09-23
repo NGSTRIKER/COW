@@ -1,26 +1,26 @@
 import discord
 from discord.ext import commands
 
-# HU IMMORTAL BLESSED LAND ITEMS DATASET
+# Dataset of server items and offerings
 BLESSED_LAND_ITEMS = {
     "guts gu": {
-        "message": "Little Hu Immortal presents **Rank 5 Guts Gu** from Dang Hun Mountain for {user}! 🏔️✨",
+        "message": "Presents Rank 5 Guts Gu from Dang Hun Mountain for {user}!",
         "gif": "https://media.tenor.com/6OmgWJ8946QAAAAM/komaru.gif"
     },
     "fox tea": {
-        "message": "Little Hu Immortal serves freshly brewed **Hu Immortal Fox Tea** to {user}! 🍵🦊",
+        "message": "Serves freshly brewed Fox Tea to {user}!",
         "gif": "https://media.tenor.com/hh6zQ8DjSAAAAAAM/cheese.gif"
     },
     "primeval stone": {
-        "message": "Little Hu Immortal grants **100 Primeval Stones** to {user}! 💎✨",
+        "message": "Grants 100 Primeval Stones to {user}!",
         "gif": "https://media1.tenor.com/m/aF6yp5swThkAAAAC/butte-r.gif"
     },
     "pink crane": {
-        "message": "A **Pink Cloud Crane** carries {user} across Hu Immortal Blessed Land! 🦩🌸",
+        "message": "A Pink Cloud Crane carries {user} across the land!",
         "gif": "https://media.tenor.com/socIN9nPWFsAAAAM/shaving-cream-messy.gif"
     },
     "starlight firefly": {
-        "message": "Little Hu Immortal releases **Starlight Firefly Gu** to illuminate the night for {user}! 🌟🌌",
+        "message": "Releases Starlight Firefly Gu to illuminate the night for {user}!",
         "gif": "https://media1.tenor.com/m/TkUcZAfuLT0AAAAC/chocolate-ice-cream-cone-vanilla.gif"
     },
 }
@@ -28,20 +28,24 @@ BLESSED_LAND_ITEMS = {
 
 class DairyFarm(commands.Cog):
     """
-    🌸 Hu Immortal Blessed Land Offerings
-    Triggers on 'offer <item>' or 'serve <item>'
+    DairyFarm Cog — Responds to chat offering triggers ('offer <item>', 'serve <item>', 'nom nom <item>')
+    and posts formatted item embeds with GIF attachments.
     """
     def __init__(self, bot):
         self.bot = bot
-        print("✅ Hu Immortal Blessed Land Offerings Cog Loaded")
+        print("[Cog Loaded] Dairy Farm Offerings Cog")
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
+        """
+        Event listener checking text messages for item offering prefixes.
+        """
         if message.author.bot:
             return
 
         content = message.content.lower().strip()
 
+        # Match offering command prefixes
         prefix = None
         if content.startswith("offer "):
             prefix = "offer "
@@ -53,6 +57,7 @@ class DairyFarm(commands.Cog):
         if not prefix:
             return
 
+        # Extract product name
         product = content[len(prefix):].strip()
 
         if product not in BLESSED_LAND_ITEMS:
@@ -60,10 +65,11 @@ class DairyFarm(commands.Cog):
 
         item = BLESSED_LAND_ITEMS[product]
 
+        # Build and send item embed
         embed = discord.Embed(
-            title="🌸 Hu Immortal Blessed Land Offerings",
+            title="Blessed Land Offerings",
             description=item["message"].format(user=message.author.mention),
-            colour=0xffb6c1  # Soft Pink theme for Little Hu Immortal
+            colour=0xffb6c1,
         )
 
         embed.set_image(url=item["gif"])
