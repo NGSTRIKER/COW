@@ -59,7 +59,25 @@ Sends customizable member join greetings to configured server channels.
 
 ---
 
-### 5. Moderation and Discipline Commands
+### 5. Multi-Channel & Standard Leveling System (`/profile`, `/leveling`)
+A dual-mode leveling architecture with crash-safe local SQLite storage (`leveling.db` in WAL mode).
+
+- **Standard Leveling:** Tracks server-wide experience points, global ranks, levels, and progress bars.
+- **Multi-Channel Leveling:** Awards XP specifically allocated to designated channels with customizable XP rates and cooldowns per channel.
+- **User Commands:**
+  - `/profile [user]` - View complete leveling profile including global server rank, progress bar, and channel-by-channel XP breakdown (with interactive pagination).
+  - `/rank [member]` - Fast rank card showing server level, total XP, and progress bar.
+  - `/leaderboard [channel]` - Display top 10 members globally or filtered for a specific channel.
+- **Admin Configuration Commands:**
+  - `/leveling channel_set channel:#channel exp_per_msg:<int> [cooldown:<int>] [enabled:<bool>]` - Configure channel XP rate and cooldown.
+  - `/leveling channel_remove channel:#channel` - Remove a channel from multi-channel leveling.
+  - `/leveling channel_list` - View all configured channels and their rates.
+  - `/leveling settings` - Toggle subsystems and level-up announcements.
+- **Admin Dashboard Integration:** Control both Standard Leveling and Multi-Channel Leveling directly inside `/dashboard` with one-click toggles and channel configuration modals.
+
+---
+
+### 6. Moderation and Discipline Commands
 Text and slash moderation utilities for server staff with permission validation and confirmation steps.
 
 - **Timeout Command:** `suppress @user for <seconds> because <reason>` - Applies member timeout.
